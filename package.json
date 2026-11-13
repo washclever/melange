@@ -1,0 +1,32 @@
+{
+  "name": "melange",
+  "version": "0.0.0",
+  "description": "Browser-based schematic editor and SPICE simulator (transient / DC / AC / noise) with a results calculator and an OpenRouter assistant, no server required.",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node tools/check-bundle.mjs",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit --skipLibCheck --target es2022 --module esnext --moduleResolution bundler --strict --allowImportingTsExtensions --lib es2022,dom,dom.iterable --types vite/client,@webgpu/types src/app.ts src/spike-a.ts src/spike-b.ts",
+    "verify": "node tools/verify-extract.ts && node tools/verify-incremental.ts && node tools/verify-save.ts && node tools/verify-sheet-index.ts && node tools/verify-scene.ts && node tools/verify-measure.ts && node tools/verify-dotmeas.ts && node tools/verify-snap.ts && node tools/verify-simlog.ts && node tools/verify-history.ts && node tools/verify-transform.ts && node tools/verify-follow.ts && node tools/verify-spatial.ts && node tools/verify-sim.ts && node tools/verify-arrange.ts && node tools/verify-net.ts && node tools/verify-sp.ts && node tools/verify-import.ts && node tools/verify-library.ts && node tools/verify-calc.ts && node tools/verify-ai-client.ts && node tools/verify-ai-tools.ts && node tools/verify-ai-agent.ts && node tools/verify-front.ts && node tools/verify-bridge.ts",
+    "e2e": "node tools/e2e.ts && node tools/e2e-calc.ts && node tools/e2e-ai.ts && node tools/e2e-layout.ts && node tools/e2e-art.ts && node tools/e2e-layout-examples.ts",
+    "spike": "node tools/spike.ts",
+    "postinstall": "node tools/extract-wasm.mjs && node tools/extract-sky130.mjs",
+    "check-bundle": "node tools/check-bundle.mjs",
+    "demo-sp": "node tools/make-demo-sp.ts dist/rc-demo.sp",
+    "bench": "node tools/bench.ts",
+    "e2e:examples": "node tools/e2e-layout-examples.ts",
+    "e2e:sims": "node tools/e2e-layout-examples.ts --sim",
+    "e2e:browser": "node tools/browser/run.mjs"
+  },
+  "dependencies": {
+    "eecircuit-engine": "^1.9.0"
+  },
+  "devDependencies": {
+    "@webgpu/types": "^0.1.60",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7"
+  }
+}

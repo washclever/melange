@@ -1,0 +1,1 @@
+[{"constraint": "PowerPorts", "ports": ["VDD"]}, {"constraint": "GroundPorts", "ports": ["VSS"]}, {"constraint": "SymmetricNets", "net1": "inp", "net2": "inn", "direction": "V"}, {"constraint": "Order", "instances": ["M2", "M3", "M4"], "direction": "left_to_right"}, {"constraint": "Boundary", "max_height": 100}]
