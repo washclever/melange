@@ -1,0 +1,297 @@
+/* 레이아웃 편집기 (Placement · Layout) — 이 파일은 레이아웃 덩어리와 같이 받는다 (shell.mjs 가 가져온다).
+ *
+ *  색은 melange 의 테마 변수에서 온다. 편집기 안쪽(.lyt)과 띄움 메뉴(.lyt-pop)에서만 쓰는 이름으로 옮겨 둔다 —
+ *  melange 도 --line · --panel · --grid · --axis 를 쓰므로 :root 에 두면 회로도 색이 바뀐다.
+ *  캔버스 바탕과 층 색은 레이아웃에 맞춘 것이다 (불투명 바탕 위에서 금속 층이 잘 보이게).
+ */
+.lyt, .lyt-pop {
+  --ground: transparent;
+  --panel: var(--surface-pop);
+  --sunk: var(--fill-strong);
+  --ink: var(--fg);
+  --muted: var(--mut);
+  --faint: color-mix(in srgb, var(--mut) 72%, transparent);
+  --line: var(--border-strong);
+  --hair: var(--border);
+  --copper: var(--accent);
+  --copper-soft: color-mix(in srgb, var(--accent) 18%, transparent);
+  --ours: var(--accent);
+  --good: var(--ok);
+  --probe: var(--wire);
+  --shadow: var(--shadow-float);
+  --sans: var(--font);
+  --axis: #e173ab; --block: #40566a; --block-line: #8fa8bd;
+  --canvas: #0a0e13; --grid: #141b23; --grid-major: #1e2731;
+  color: var(--ink); font: 12px/1.45 var(--font);
+}
+:root.light .lyt, :root.light .lyt-pop {
+  --axis: #9c2d66; --block: #a8bccd; --block-line: #45596b;
+  --canvas: #f4f6f8; --grid: #e2e7ec; --grid-major: #cfd7df;
+}
+@media (prefers-color-scheme: light) {
+  :root:not(.dark) .lyt, :root:not(.dark) .lyt-pop {
+    --axis: #9c2d66; --block: #a8bccd; --block-line: #45596b;
+    --canvas: #f4f6f8; --grid: #e2e7ec; --grid-major: #cfd7df;
+  }
+}
+.lyt [hidden] { display: none !important; }
+.lyt .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.lyt kbd { font-family: var(--mono); font-size: 10px; color: var(--faint); border: 1px solid var(--hair); border-radius: 3px; padding: 0 3px; }
+.lyt input, .lyt select, .lyt-pop input, .lyt-pop select {
+  font: inherit; color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 5px; padding: 3px 6px;
+}
+.lyt button { font: inherit; }
+
+/* ── 자리: 회로(melange 화면) 옆·아래, 또는 혼자 ─────────────────────────────── */
+#lyt-host { display: flex; min-width: 0; min-height: 0; position: relative; border-radius: var(--radius-card); overflow: visible; }
+#lyt-host > .lyt-inner { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: row; gap: 0;
+  border: 1px solid var(--edge); border-radius: var(--radius-card); overflow: hidden; background: var(--surface-pop); box-shadow: var(--shadow-card); }
+#lyt-host > .lyt-inner.rows { flex-direction: column; }
+:root.lyt-solo #toolbar, :root.lyt-solo #mid, :root.lyt-solo #split-bottom, :root.lyt-solo #bottom { display: none !important; }
+:root.lyt-solo #lyt-host { grid-row: 2 / -1; grid-column: 1; }
+:root.lyt-cols body { grid-template-columns: minmax(0, var(--lyt-a, 1fr)) minmax(0, var(--lyt-b, 1fr)); }
+/* 어시스턴트 칸은 늘 맨 오른쪽 (index.html 의 #ai) — 회로 | 편집기 | 어시스턴트 */
+@media (min-width: 901px) { :root.lyt-cols:not(.no-ai) body { grid-template-columns: minmax(0, var(--lyt-a, 1fr)) minmax(0, var(--lyt-b, 1fr)) var(--ai-w, 340px); } }
+:root.lyt-cols #menubar { grid-column: 1 / -1; }
+:root.lyt-cols #toolbar, :root.lyt-cols #mid, :root.lyt-cols #split-bottom, :root.lyt-cols #bottom { grid-column: 1; }
+:root.lyt-cols #lyt-host { grid-column: 2; grid-row: 2 / -1; }
+:root.lyt-rows body { grid-template-rows: 34px 40px minmax(0, var(--lyt-a, 1fr)) auto auto minmax(0, var(--lyt-b, 1fr)); }
+:root.lyt-rows #lyt-host { grid-row: 6; grid-column: 1; }
+@media (pointer: coarse) { :root.lyt-rows body { grid-template-rows: 34px 46px minmax(0, var(--lyt-a, 1fr)) auto auto minmax(0, var(--lyt-b, 1fr)); } }
+/* 사이 막대 — 회로와 편집기 사이(바깥), 편집기 둘 사이(안) */
+.lyt-split { flex: 0 0 6px; cursor: col-resize; touch-action: none; position: relative; z-index: 3; }
+.lyt-split:hover, .lyt-split:active { background: color-mix(in srgb, var(--accent) 45%, transparent); }
+.lyt-outer { position: absolute; left: -6px; top: 0; bottom: 0; width: 6px; border-radius: 3px; }
+:root.lyt-rows .lyt-outer { left: 0; right: 0; top: -6px; bottom: auto; width: auto; height: 6px; cursor: row-resize; }
+.lyt-inner.rows > .lyt-mid { cursor: row-resize; }
+.lyt-mid { background: var(--border); }
+.wspane { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.wspane.active { box-shadow: inset 0 0 0 1.5px var(--accent); z-index: 1; }
+:root.lyt-circuit-active #stage { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.lyt .loadfail { margin: 24px; color: var(--bad); font-family: var(--mono); font-size: 12px; }
+/* 새 창 */
+body.lyt-popup { display: flex; flex-direction: column; height: 100dvh; margin: 0; padding: 0; background: var(--backdrop); }
+body.lyt-popup > #lyt-popup-root { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+
+/* melange 가 쓰는 같은 이름의 class 를 되돌린다 */
+.lyt .chip { display: inline-block; height: auto; gap: 0; }
+.lyt .sw { vertical-align: middle; margin-right: 0; }
+.lyt .tag { border: 0; }
+
+/* 삼각형 메뉴 */
+.lyt-pop.lyt-menu { padding: 5px; min-width: 260px; }
+.lyt-pop.lyt-menu button { display: flex; align-items: center; gap: 9px; width: 100%; border: 0; background: transparent; color: var(--ink);
+  padding: 6px 9px; border-radius: 6px; cursor: pointer; text-align: left; font: 12px var(--font); }
+.lyt-pop.lyt-menu button:hover { background: var(--fill-strong); }
+.lyt-pop.lyt-menu button.on { color: var(--accent); font-weight: 600; }
+.lyt-pop.lyt-menu hr { border: 0; height: 1px; background: var(--border); margin: 4px 2px; }
+
+/* ── 띄움 메뉴 (내보내기, 오른쪽 클릭, 도움말) ─────────────────────────────── */
+.lyt-poptitle { color: var(--muted); font-family: var(--mono); font-size: 12px; white-space: nowrap; }
+.lyt-popped { color: var(--faint); font-style: italic; }
+.lyt-pop {
+  position: fixed; z-index: 50; min-width: 200px; max-width: min(420px, calc(100vw - 12px)); max-height: calc(100vh - 60px); overflow: auto;
+  background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 9px; box-shadow: var(--shadow); padding: 5px;
+}
+.lyt-pop .mh { font-family: var(--mono); font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); padding: 6px 9px 4px; }
+.lyt-pop .msep { height: 1px; background: var(--hair); margin: 4px 2px; }
+.lyt-pop .mi {
+  display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; border: 0; background: transparent; color: var(--ink);
+  padding: 6px 9px; border-radius: 6px; cursor: pointer; font-size: 12.5px; text-decoration: none;
+}
+.lyt-pop .mi:hover:not(:disabled) { background: var(--copper-soft); color: var(--copper); }
+.lyt-pop .mi:disabled { opacity: 0.45; cursor: default; }
+.lyt-pop .mi small { color: var(--faint); margin-left: auto; padding-left: 10px; }
+.lyt-pop .mi kbd { margin-left: auto; padding-left: 12px; }
+.lyt-pop .mi .ic { flex: 0 0 auto; opacity: 0.85; }
+.lyt-pop .dotmark,
+.lyt-pop .nomark { flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; }
+.lyt-pop .dotmark { background: var(--copper); }
+.lyt-pop .empty { color: var(--muted); padding: 8px 10px; margin: 0; font-size: 12px; max-width: 300px; }
+.lyt-pop.exportmenu .mi.dl span { line-height: 1.35; }
+.lyt-pop.exportmenu .mi.dl small { margin-left: 0; padding-left: 0; font-family: var(--mono); font-size: 10.5px; }
+.lyt-pop.help { padding: 12px 16px; max-width: min(520px, calc(100vw - 12px)); font-size: 12.5px; line-height: 1.6; }
+.lyt-pop.help h3 { margin: 0 0 6px; font-size: 14px; }
+.lyt-pop.help h4 { margin: 12px 0 4px; font-size: 12px; color: var(--copper); }
+.lyt-pop.help p,
+.lyt-pop.help ul { margin: 0 0 6px; color: var(--muted); }
+.lyt-pop.help ul { padding-left: 18px; }
+.lyt-pop.help b { color: var(--ink); }
+
+/* ── 편집기 틀 (frame.mjs) ─────────────────────────────── */
+.lyt .ws { flex: 1 1 auto; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: var(--ground); position: relative; }
+.lyt .ws-tools {
+  display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 4px 8px; min-height: 38px;
+  background: var(--panel); border-bottom: 1px solid var(--line);
+}
+.lyt .ws-tools .ttl { font-weight: 600; font-size: 12.5px; padding: 0 6px 0 2px; white-space: nowrap; }
+.lyt .ws-tools .ttl small { font-weight: 400; color: var(--faint); margin-left: 4px; }
+.lyt .ws-tools .tfill { flex: 1 1 auto; }
+.lyt .tsep { width: 1px; align-self: stretch; margin: 4px 3px; background: var(--hair); }
+.lyt .tb {
+  display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 8px; border-radius: 6px;
+  border: 1px solid transparent; background: transparent; color: var(--ink); font-size: 12px; cursor: pointer; white-space: nowrap;
+}
+.lyt .tb:hover:not(:disabled) { background: var(--sunk); border-color: var(--line); }
+.lyt .tb:disabled { opacity: 0.4; cursor: default; }
+.lyt .tb[aria-pressed="true"] { background: var(--copper-soft); color: var(--copper); border-color: color-mix(in srgb, var(--copper) 40%, transparent); font-weight: 600; }
+.lyt .tb kbd { margin-left: 1px; }
+.lyt .tb.icon .tl,
+.lyt .tb.icon kbd { display: none; }
+.lyt .tb.icon { width: 30px; padding: 0; justify-content: center; }
+.lyt .tb.run { background: var(--copper); color: var(--on-accent); border-color: var(--copper); font-weight: 600; padding: 0 11px; }
+.lyt .tb.run:hover:not(:disabled) { background: var(--copper); filter: brightness(1.08); }
+.lyt .tb.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 50%, transparent); }
+.lyt .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+.lyt .seg .tb { border-radius: 0; border: 0; height: 26px; }
+.lyt .seg .tb + .tb { border-left: 1px solid var(--hair); }
+.lyt .seg.lays .lay-b { font-family: var(--mono); font-size: 11px; padding: 0 7px; gap: 4px; }
+.lyt .ldir { color: var(--faint); font-size: 11px; margin-left: -1px; }
+.lyt .seg.lays .lay-b kbd.lk { font-size: 9px; padding: 0 3px; margin-left: 1px; opacity: 0.8; }
+.lyt .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; flex: 0 0 auto; }
+.lyt .more { display: inline-flex; }
+@media (max-width: 1100px) {
+.lyt .ws-tools .tb kbd { display: none; }
+}
+.lyt .ws-body { display: flex; min-height: 0; position: relative; }
+.lyt .ws-side {
+  flex: 0 0 auto; width: 248px; min-height: 0; overflow: auto; background: var(--panel); font-size: 12px;
+  border-right: 1px solid var(--line);
+}
+.lyt .ws-right { width: 296px; border-right: 0; border-left: 1px solid var(--line); }
+.lyt .ws.no-left .ws-left,
+.lyt .ws.no-right .ws-right { display: none; }
+.lyt .ws-stage { flex: 1 1 auto; min-width: 0; min-height: 0; position: relative; background: var(--canvas); }
+.lyt .ws-canvas { position: absolute; inset: 0; display: block; cursor: default; touch-action: none; outline: none; }
+.lyt .ws-canvas.drawtool { cursor: crosshair; }
+.lyt .ws-canvas.pannable { cursor: grab; }
+.lyt .ws-canvas.panning { cursor: grabbing; }
+.lyt .ws-float { position: absolute; right: 8px; bottom: 8px; pointer-events: none; }
+.lyt .ws.narrow .ws-side { display: none; position: absolute; top: 0; bottom: 0; z-index: 4; box-shadow: var(--shadow); max-width: 86%; }
+.lyt .ws.narrow .ws-left { left: 0; }
+.lyt .ws.narrow .ws-right { right: 0; }
+.lyt .ws.narrow.show-left .ws-left,
+.lyt .ws.narrow.show-right .ws-right { display: block; }
+.lyt .pane { border-bottom: 1px solid var(--hair); }
+.lyt .pane-h { margin: 0; display: flex; align-items: center; position: sticky; top: 0; background: var(--panel); z-index: 1; }
+.lyt .pane-t {
+  flex: 1 1 auto; display: flex; align-items: center; gap: 6px; border: 0; background: transparent; cursor: pointer; text-align: left;
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); padding: 8px 10px;
+}
+.lyt .pane-t:hover { color: var(--copper); }
+.lyt .chev { width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); margin: 0 3px 3px 1px; transition: transform .12s; }
+.lyt .pane.shut .chev { transform: rotate(-45deg); margin-bottom: 0; }
+.lyt .pane.shut .pane-b { display: none; }
+.lyt .pane-b { padding: 2px 10px 10px; }
+.lyt .pane-b h4 { margin: 8px 0 4px; font-size: 12px; font-weight: 600; }
+.lyt .pane-b h4:first-child { margin-top: 2px; }
+.lyt .prow { display: flex; gap: 8px; padding: 4px 0; border-top: 1px solid var(--hair); align-items: baseline; }
+.lyt .prow:first-of-type { border-top: 0; }
+.lyt .prow .pl { flex: 0 0 72px; color: var(--faint); font-family: var(--mono); font-size: 10.5px; }
+.lyt .prow .pv { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.lyt .prow select { max-width: 100%; }
+.lyt .prow input.num { width: 92px; }
+.lyt .prow input[type=range] { width: 110px; vertical-align: middle; }
+.lyt .pbtns { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0 4px; }
+.lyt .pb,
+.lyt .chip {
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 6px; padding: 4px 9px; font-size: 12px; cursor: pointer;
+}
+.lyt .pb:hover:not(:disabled),
+.lyt .chip:hover { border-color: var(--copper); color: var(--copper); }
+.lyt .pb:disabled { opacity: 0.45; cursor: default; }
+.lyt .pb.run { background: var(--copper); color: var(--on-accent); border-color: var(--copper); font-weight: 600; }
+.lyt .pb kbd { margin-left: 3px; }
+.lyt .chip { padding: 1px 7px; font-family: var(--mono); font-size: 11px; border-radius: 999px; margin: 1px 0; }
+.lyt .x { border: 0; background: transparent; color: var(--faint); cursor: pointer; padding: 0 2px; }
+.lyt .x:hover { color: var(--bad); }
+.lyt .tag { display: inline-block; font-family: var(--mono); font-size: 9.5px; padding: 0 5px; border-radius: 4px; background: var(--copper-soft); color: var(--copper); vertical-align: 1px; }
+.lyt .empty { color: var(--muted); margin: 6px 0; }
+.lyt .hint { color: var(--faint); font-size: 11.5px; margin: 8px 0 2px; }
+.lyt p.warn { color: var(--warn); font-size: 11.5px; margin: 4px 0 6px; }
+.lyt .pb.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 50%, transparent); }
+.lyt .pb .ic { vertical-align: -3px; }
+.lyt ul.notes { margin: 6px 0 2px; padding-left: 16px; color: var(--muted); font-size: 11.5px; }
+.lyt ul.notes li { margin: 2px 0; }
+.lyt .settings { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; }
+.lyt .field { display: flex; flex-direction: column; gap: 3px; }
+.lyt .field > span { font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; color: var(--faint); display: flex; justify-content: space-between; gap: 8px; }
+.lyt .field b { color: var(--copper); font-weight: 600; font-variant-numeric: tabular-nums; }
+.lyt .field select { width: 100%; }
+.lyt .list { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11px; }
+.lyt .list th { text-align: left; font-weight: 500; font-size: 9.5px; letter-spacing: 0.06em; color: var(--faint); padding: 4px 4px; border-bottom: 1px solid var(--hair); position: sticky; top: 0; background: var(--panel); }
+.lyt .list td { padding: 3px 4px; border-top: 1px solid var(--hair); white-space: nowrap; }
+.lyt .list td.nm { color: var(--ink); max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+.lyt .list .n { text-align: right; font-variant-numeric: tabular-nums; }
+.lyt .list tbody tr { cursor: pointer; }
+.lyt .list tbody tr:hover td { background: var(--sunk); }
+.lyt .list tbody tr.on td { background: var(--copper-soft); color: var(--copper); }
+.lyt .list td.flip { letter-spacing: 0.1em; }
+.lyt .list td.wrap { white-space: normal; }
+.lyt .list td.wrap small { color: var(--faint); }
+.lyt table.rank { border-collapse: collapse; font-family: var(--mono); font-size: 11px; width: 100%; }
+.lyt table.rank th,
+.lyt table.rank td { padding: 2px 4px; text-align: left; border-top: 1px solid var(--hair); }
+.lyt table.rank th { color: var(--faint); font-weight: 500; font-size: 9.5px; border-top: 0; }
+.lyt .tabs { display: flex; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--panel); z-index: 2; }
+.lyt .tab { flex: 1 1 0; border: 0; background: transparent; padding: 8px 6px; cursor: pointer; color: var(--muted); font-size: 12px; border-bottom: 2px solid transparent; }
+.lyt .tab[aria-selected="true"] { color: var(--copper); border-bottom-color: var(--copper); font-weight: 600; }
+.lyt .tab .cnt { font-family: var(--mono); font-size: 10px; color: var(--bad); }
+.lyt .tabpane { padding: 6px 8px 10px; }
+.lyt .tabpane .filter { width: 100%; margin-bottom: 6px; }
+.lyt .errs { list-style: none; margin: 0; padding: 0; font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+.lyt .errs li { padding: 5px 4px; border-top: 1px solid var(--hair); line-height: 1.4; overflow-wrap: anywhere; }
+.lyt .errs li.go { cursor: pointer; }
+.lyt .errs li.go:hover { background: var(--sunk); }
+.lyt .errs li.fresh b { text-decoration: underline; }
+/* 아직 안 이은 넷의 OPEN — 오류가 아니라 할 일: 붉지 않게, 흐리게 */
+.lyt .errs.todo li, .lyt .errs li.todo { opacity: 0.7; }
+.lyt .errs li.todo b { color: var(--muted); font-weight: 500; }
+.lyt .errs b { color: var(--bad); font-weight: 600; }
+.lyt .sum { font-size: 11px; color: var(--muted); margin: 2px 0 6px; }
+.lyt .layers .lgroup { display: flex; align-items: center; gap: 6px; padding: 6px 0 2px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; color: var(--faint); text-transform: uppercase; }
+.lyt .layers .lrow { display: flex; align-items: center; gap: 6px; padding: 1px 0 1px 14px; font-family: var(--mono); font-size: 11.5px; }
+.lyt .layers .lrow.act .lname { color: var(--copper); font-weight: 600; }
+.lyt .layers .eye { border: 0; background: transparent; color: var(--faint); cursor: pointer; padding: 1px; display: inline-flex; }
+.lyt .layers .eye[aria-pressed="true"] { color: var(--ink); }
+.lyt .layers .sw.obj { background: transparent; border: 1px dashed var(--faint); }
+.lyt .layers .lname { border: 0; background: transparent; padding: 0; cursor: default; color: var(--ink); font: inherit; text-align: left; }
+.lyt .layers button.lname { cursor: pointer; }
+.lyt .layers button.lname:hover { color: var(--copper); text-decoration: underline; }
+.lyt .layers .lsolo { display: flex; align-items: center; gap: 6px; padding: 2px 0 6px; font-size: 11.5px; color: var(--muted); cursor: pointer; }
+.lyt .layers .lsolo kbd { margin-left: auto; }
+.lyt .metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--hair); margin: 4px -10px 6px; }
+.lyt .m { background: var(--panel); padding: 7px 10px; }
+.lyt .m dt { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.06em; color: var(--faint); margin: 0 0 1px; }
+.lyt .m dd { margin: 0; font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+.lyt .m dd small { font-size: 10px; }
+.lyt .m dd.lose { color: var(--copper); }
+.lyt pre.sp { margin: 4px 0; max-height: 340px; overflow: auto; font-family: var(--mono); font-size: 10.5px; line-height: 1.45; background: var(--sunk); padding: 8px; border-radius: 6px; white-space: pre; }
+.lyt .ws-status {
+  display: flex; align-items: center; gap: 14px; padding: 3px 10px; min-height: 24px; overflow: hidden;
+  background: var(--panel); border-top: 1px solid var(--line); font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap;
+}
+.lyt .ws-status b { color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
+.lyt .ws-status .xy { min-width: 170px; }
+.lyt .ws-status .hint { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink); margin: 0; font-size: 11px; }
+@media (max-width: 720px) {
+.lyt .ws-status .xy { min-width: 0; }
+}
+.lyt .layers .lg { border: 0; background: transparent; padding: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; }
+.lyt .layers .lg:hover { color: var(--copper); }
+.lyt .layers .lg .chev { margin: 0 2px 2px 0; }
+.lyt .layers .lg .chev.shut { transform: rotate(-45deg); margin-bottom: 0; }
+.lyt .ws[data-ws="placement"] .ws-left { width: 300px; }
+.lyt .ws-left .pane-b { overflow-x: auto; }
+.lyt /* 좁은 편집기 (나란히 셋,
+.lyt 휴대폰) — 아이콘이 있는 단추는 아이콘만 */
+.ws.narrow .tb:has(.ic) .tl { display: none; }
+.lyt .ws.narrow .tb:has(.ic) { padding: 0 6px; }
+.lyt .ws.narrow .tb kbd { display: none; }
+.lyt .ws.narrow .tsep { margin: 4px 1px; }
+@media (max-width: 600px) {
+.lyt .ws-tools { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.lyt .ws-tools::-webkit-scrollbar { display: none; }
+.lyt .ws-tools > * { flex: 0 0 auto; }
+.lyt .ws-tools .tfill { flex: 1 0 8px; }
+}

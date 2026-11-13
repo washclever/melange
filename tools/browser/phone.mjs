@@ -1,0 +1,22 @@
+// 폰 너비: AI 단추가 메뉴 막대에 있고, 어시스턴트는 서랍으로 열린다 (npm run e2e:browser phone)
+import { createRequire } from "node:module";
+const { chromium, devices } = createRequire(import.meta.url)("playwright");
+const [url, shot] = process.argv.slice(2);
+const browser = await chromium.launch();
+const page = await (await browser.newContext({ ...devices["iPhone 13"] })).newPage();
+let fails = 0;
+const ok = (c, msg, d = "") => { if (!c) fails++; console.log(`  ${c ? "PASS" : "FAIL"}  ${msg}${d ? "   " + d : ""}`); };
+await page.goto(url);
+await page.waitForSelector("#t-ai");
+const b = await page.$eval("#t-ai", (e) => { const r = e.getBoundingClientRect(); return { l: r.left, r: r.right, w: innerWidth, t: document.getElementById("t-theme").getBoundingClientRect().left }; });
+ok(b.r <= b.t + 1 && b.l > 0 && b.r <= b.w, "AI 단추가 화면 안, 테마 단추 왼쪽", JSON.stringify(b));
+const cols = await page.evaluate(() => getComputedStyle(document.body).gridTemplateColumns);
+await page.tap("#t-ai");
+await page.waitForTimeout(500);
+const ai = await page.$eval("#ai", (e) => ({ pos: getComputedStyle(e).position, open: e.classList.contains("open"), w: Math.round(e.getBoundingClientRect().width) }));
+const cols2 = await page.evaluate(() => getComputedStyle(document.body).gridTemplateColumns);
+ok(ai.pos === "fixed" && ai.open && cols.split(" ").length === 1 && cols2.split(" ").length === 1, "폰에서는 서랍 — 격자 칸이 늘지 않는다", `${JSON.stringify(ai)} · ${cols2}`);
+await page.screenshot({ path: `${shot}/phone-ai.png` });
+await browser.close();
+console.log(fails ? `실패 ${fails}` : "통과");
+process.exit(fails ? 1 : 0);

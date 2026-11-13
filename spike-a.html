@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Melange spike</title>
+<style>
+  :root { color-scheme: light dark; --bg:#fff; --fg:#111; --mut:#666; --line:#d4d4d4; --in:#2563eb; --out:#dc2626; --ok:#15803d; --bad:#b91c1c; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#111417; --fg:#e8e8e8; --mut:#9aa0a6; --line:#2e3338; --in:#60a5fa; --out:#f87171; --ok:#4ade80; --bad:#f87171; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:24px 16px; background:var(--bg); color:var(--fg);
+         font:14px/1.6 ui-sans-serif, system-ui, "Segoe UI", sans-serif; }
+  main { max-width: 920px; margin: 0 auto; }
+  h1 { font-size:17px; margin:0 0 2px; font-weight:600; }
+  p.sub { margin:0 0 20px; color:var(--mut); font-size:13px; }
+  pre { background:color-mix(in srgb, var(--fg) 5%, transparent); border:1px solid var(--line);
+        border-radius:8px; padding:12px 14px; overflow-x:auto; font-size:12.5px;
+        font-family:ui-monospace,"Cascadia Code",Consolas,monospace; margin:0 0 16px; }
+  canvas { width:100%; height:300px; border:1px solid var(--line); border-radius:8px; display:block; }
+  table { border-collapse:collapse; width:100%; font-size:13px; margin-top:16px; }
+  th,td { text-align:right; padding:7px 10px; border-bottom:1px solid var(--line); }
+  th:first-child, td:first-child { text-align:left; }
+  th { color:var(--mut); font-weight:500; }
+  td.v { font-family:ui-monospace,Consolas,monospace; }
+  .pass { color:var(--ok); font-weight:600; } .fail { color:var(--bad); font-weight:600; }
+  #status { color:var(--mut); margin:14px 0; font-size:13px; }
+  .legend { display:flex; gap:18px; margin:10px 0 0; font-size:12.5px; color:var(--mut); }
+  .sw { display:inline-block; width:11px; height:3px; border-radius:2px; vertical-align:3px; margin-right:6px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Melange — spike A</h1>
+  <p class="sub">Runs ngspice WASM in a worker and checks the whole RC low-pass demo. No server.</p>
+  <pre id="netlist"></pre>
+  <div id="status">Loading the engine…</div>
+  <canvas id="wave"></canvas>
+  <div class="legend">
+    <span><span class="sw" style="background:var(--in)"></span>V(in)</span>
+    <span><span class="sw" style="background:var(--out)"></span>V(out)</span>
+    <span id="winnote"></span>
+  </div>
+  <table id="results"></table>
+</main>
+<script type="module" src="/src/spike-a.ts"></script>
+</body>
+</html>

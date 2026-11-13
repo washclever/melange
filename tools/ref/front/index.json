@@ -1,0 +1,20 @@
+[
+ "five_transistor_ota",
+ "current_mirror_ota",
+ "telescopic_ota",
+ "buffer",
+ "inverter",
+ "d2_000_ota",
+ "d2_001_parallel",
+ "d2_002_series",
+ "d2_003_dummy",
+ "d2_005_dac",
+ "d2_007_hier",
+ "d2_027_ota",
+ "d2_021_dummy",
+ "c1_001_cmota",
+ "c1_002_tele",
+ "c1_006_ccp",
+ "c1_005_casmirror",
+ "c1_003_chain"
+]

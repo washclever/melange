@@ -1,0 +1,194 @@
+/*
+ * 어시스턴트 패널 (src/ai/panel.ts). 패널 칸 자체의 자리와 크기는 index.html 에 있다 — 어시스턴트
+ * 본체를 받기 전에도 칸은 있어야 하므로. 여기는 안쪽만이다. 색은 앱의 디자인 토큰을 쓴다.
+ */
+#ai.ai-ready { padding:0; }
+.ai-head { display:flex; align-items:center; gap:4px; padding:8px 8px 6px 12px; flex:0 0 auto;
+           border-bottom:1px solid var(--border); min-width:0; }
+.ai-title { font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--mut);
+            font-weight:600; flex:0 0 auto; }
+.ai-model { min-width:0; max-width:62%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+            height:22px; padding:0 8px; margin-left:4px; border:1px solid var(--border-strong); border-radius:11px;
+            background:none; color:var(--fg); font:11px var(--font); cursor:pointer; flex:0 1 auto; }
+.ai-model:hover { background:var(--fill-strong); }
+.ai-usage { color:var(--mut); font:10.5px var(--mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+            min-width:0; flex:0 1 auto; }
+.ai-icon { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; padding:0;
+           border:0; border-radius:7px; background:none; color:var(--mut); cursor:pointer; flex:0 0 auto; }
+.ai-icon:hover:not(:disabled) { background:var(--fill-strong); color:var(--fg); }
+.ai-icon:disabled { opacity:.35; cursor:default; }
+.ai-icon[hidden] { display:none; }
+.ai-icon.on { background:var(--fill-strong); color:var(--fg); }
+/* 메모를 고치는 중: 아이콘이 천천히 깜빡인다 */
+.ai-icon.busy svg { animation:ai-blink 1.4s infinite ease-in-out; }
+.ai-close { display:none; }
+
+.ai-body { flex:1 1 0; min-height:0; overflow-y:auto; padding:10px 12px; display:flex; flex-direction:column;
+           gap:8px; overscroll-behavior:contain; }
+
+/* ── 대화 ── */
+.ai-msg { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.ai-msg.user { align-items:flex-end; }
+.ai-bubble { max-width:100%; padding:7px 10px; border-radius:10px; line-height:1.5; font-size:12.5px;
+             overflow-wrap:anywhere; color:var(--fg); }
+.ai-msg.user .ai-bubble { background:var(--accent); color:var(--on-accent); white-space:pre-wrap;
+                          border-bottom-right-radius:3px; max-width:88%; }
+.ai-msg.assistant .ai-bubble { background:var(--fill); border:1px solid var(--border); border-bottom-left-radius:3px; }
+.ai-bubble p { margin:0 0 6px; }
+.ai-bubble p:last-child, .ai-bubble ul:last-child, .ai-bubble ol:last-child { margin-bottom:0; }
+.ai-bubble ul, .ai-bubble ol { margin:0 0 6px; padding-left:18px; }
+.ai-bubble li { margin:1px 0; }
+.ai-bubble code { font:11.5px var(--mono); background:var(--inset); padding:0 3px; border-radius:3px; }
+.ai-bubble pre { margin:4px 0 6px; padding:7px 8px; background:var(--inset); border-radius:6px; overflow-x:auto; }
+.ai-bubble pre code { background:none; padding:0; white-space:pre; }
+.ai-bubble table { border-collapse:collapse; margin:4px 0 6px; font-size:11.5px; display:block; overflow-x:auto; }
+.ai-bubble th, .ai-bubble td { border:1px solid var(--border-strong); padding:2px 6px; text-align:left; white-space:nowrap; }
+.ai-bubble a { color:var(--accent); }
+.ai-dots { display:inline-flex; gap:3px; padding:3px 0; }
+.ai-dots i { width:5px; height:5px; border-radius:50%; background:var(--mut); animation:ai-blink 1.2s infinite both; }
+.ai-dots i:nth-child(2) { animation-delay:.15s; }
+.ai-dots i:nth-child(3) { animation-delay:.3s; }
+@keyframes ai-blink { 0%, 80%, 100% { opacity:.25; } 40% { opacity:1; } }
+@media (prefers-reduced-motion: reduce) { .ai-dots i { animation:none; opacity:.6; } }
+
+.ai-note { color:var(--mut); font-size:11.5px; line-height:1.5; padding:0 2px; overflow-wrap:anywhere; }
+.ai-msg.error .ai-note { color:var(--bad); }
+.ai-note-detail summary { color:var(--mut); font-size:11.5px; cursor:pointer; }
+.ai-note-detail pre { white-space:pre-wrap; font:11px var(--mono); color:var(--fg); margin:4px 0 0;
+                      padding:6px 8px; background:var(--inset); border-radius:6px; }
+.ai-undo { align-self:flex-start; height:22px; font-size:11px; }
+
+/* 도구 줄 — 잇달은 것은 '단계' 하나로 묶는다 */
+.ai-steps { border:1px solid var(--border); border-radius:8px; background:var(--inset); }
+.ai-steps > summary { padding:5px 9px; font-size:11px; color:var(--mut); cursor:pointer; list-style-position:inside;
+                      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ai-step-list { padding:0 6px 6px; display:flex; flex-direction:column; gap:2px; }
+.ai-tool > summary { display:flex; align-items:center; gap:6px; padding:3px 4px; font-size:11.5px; cursor:pointer;
+                     list-style:none; min-width:0; border-radius:5px; }
+.ai-tool > summary::-webkit-details-marker { display:none; }
+.ai-tool > summary:hover { background:var(--fill-strong); }
+.ai-dot { width:7px; height:7px; border-radius:50%; background:var(--ok); flex:0 0 auto; }
+.ai-tool.running .ai-dot { background:var(--accent); animation:ai-blink 1s infinite both; }
+.ai-tool.error .ai-dot { background:var(--warn); }
+.ai-tool-name { color:var(--fg); flex:0 0 auto; }
+.ai-tool-sum { color:var(--mut); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ai-tool.error .ai-tool-sum { color:var(--warn); }
+.ai-tool-label { font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--mut); margin:6px 4px 2px; }
+.ai-tool pre { margin:0 4px; padding:6px 7px; max-height:220px; overflow:auto; background:var(--field, var(--inset));
+               border-radius:5px; font:10.5px var(--mono); color:var(--text, #d9dee6); white-space:pre-wrap;
+               overflow-wrap:anywhere; }
+
+/* ── 비었을 때 · 연결 · 설정 ── */
+.ai-empty, .ai-settings { display:flex; flex-direction:column; gap:10px; color:var(--mut); font-size:12px; line-height:1.55; }
+.ai-empty p { margin:0; }
+.ai-empty a, .ai-settings a { color:var(--accent); font-size:12px; }
+.ai-empty-title { color:var(--fg); font-size:14px; font-weight:600; }
+.ai-fine { font-size:11px; color:var(--mut); margin:0; }
+.ai-row { display:flex; gap:6px; align-items:center; flex-wrap:wrap; min-width:0; }
+.ai-row > input, .ai-row > .ai-combo { flex:1 1 140px; min-width:0; }
+.ai-suggest { display:flex; flex-direction:column; gap:6px; }
+.ai-chip { height:auto; min-height:28px; padding:5px 10px; white-space:normal; text-align:left; line-height:1.4;
+           justify-content:flex-start; }
+.btn.danger { color:var(--bad); }
+
+.ai-field { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.ai-field-label { font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--mut); }
+.ai-settings input[type=text], .ai-settings input[type=password], .ai-settings input[type=number], .ai-combo input {
+  width:100%; min-width:0; font:12px var(--mono); height:28px; padding:0 8px;
+  border:1px solid var(--border); border-radius:6px; background:var(--field, var(--inset)); color:var(--text, #d9dee6); }
+.ai-settings input:focus { outline:none; border-color:var(--accent); }
+.ai-check { display:flex; flex-wrap:wrap; align-items:center; gap:6px; color:var(--fg); cursor:pointer; }
+.ai-check input { margin:0; width:14px; height:14px; }
+.ai-check .ai-hint { flex-basis:100%; padding-left:20px; }
+.ai-hint { font-size:10.5px; color:var(--mut); line-height:1.45; }
+.ai-buttons { margin-top:4px; }
+.ai-combo { position:relative; }
+.ai-combo-list { position:absolute; left:0; right:0; top:calc(100% + 3px); z-index:40; display:none; max-height:240px;
+                 overflow-y:auto; padding:4px; border-radius:8px; border:1px solid var(--edge);
+                 background:var(--glass), var(--surface-pop, var(--surface-menu)); box-shadow:var(--shadow-float); }
+.ai-combo-list.open { display:block; }
+.ai-combo-item { display:flex; flex-direction:column; padding:5px 7px; border-radius:5px; cursor:pointer; color:var(--fg);
+                 font-size:12px; }
+.ai-combo-item:hover, .ai-combo-item.on { background:var(--fill-strong); }
+
+/* ── 입력 칸 ── */
+.ai-compose { display:flex; gap:6px; align-items:flex-end; padding:8px; border-top:1px solid var(--border); flex:0 0 auto; }
+.ai-input { flex:1 1 auto; min-width:0; resize:none; min-height:36px; max-height:160px; padding:8px 10px;
+            border:1px solid var(--border); border-radius:8px; background:var(--field, var(--inset));
+            color:var(--text, #d9dee6); font:12.5px/1.45 var(--font); }
+.ai-input:focus { outline:none; border-color:var(--accent); }
+.ai-send { display:inline-flex; align-items:center; gap:5px; height:36px; padding:0 12px; border:0; border-radius:8px;
+           background:var(--accent); color:var(--on-accent); font:600 12px var(--font); cursor:pointer; flex:0 0 auto; }
+.ai-send:hover { background:var(--accent-hover); }
+.ai-send.stop { background:var(--fill-strong); color:var(--fg); box-shadow:inset 0 0 0 1px var(--border-strong); }
+
+.ai-meta { display:flex; justify-content:space-between; gap:8px; padding:0 10px 7px; margin-top:-2px; flex:0 0 auto;
+           font-size:10.5px; color:var(--mut); min-width:0; }
+.ai-meta .ai-usage { font:10.5px var(--mono); color:var(--mut); background:none; border:0; padding:0; cursor:pointer;
+                     white-space:nowrap; text-decoration:underline dotted; text-underline-offset:2px; }
+.ai-meta .ai-usage:empty { display:none; }
+.ai-meta .ai-usage:hover { color:var(--fg); }
+.ai-meta-hint { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+@media (pointer: coarse) { .ai-meta-hint { display:none; } }
+
+#ai.settings-open .ai-compose, #ai.settings-open .ai-meta { display:none; }
+
+/* ── 사용 기록 ── */
+.ai-stats { display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:6px; }
+.ai-stat { display:flex; flex-direction:column; gap:1px; padding:7px 9px; border-radius:8px; background:var(--inset);
+           border:1px solid var(--border); min-width:0; }
+.ai-stat-v { color:var(--fg); font:600 13px var(--mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ai-stat-l { font-size:10.5px; color:var(--mut); }
+.ai-table-wrap { overflow-x:auto; max-width:100%; }
+.ai-table { border-collapse:collapse; width:100%; font-size:11.5px; }
+.ai-table th { text-align:left; font-weight:600; color:var(--mut); font-size:10.5px; padding:3px 6px;
+               border-bottom:1px solid var(--border-strong); white-space:nowrap; }
+.ai-table td { padding:3px 6px; border-bottom:1px solid var(--border); color:var(--fg); overflow-wrap:anywhere; }
+.ai-table td.num { font-family:var(--mono); text-align:right; white-space:nowrap; }
+
+/* ── 프로젝트 메모 ── */
+.ai-memo { width:100%; min-height:140px; resize:vertical; padding:8px 10px; border:1px solid var(--border); border-radius:8px;
+           background:var(--field, var(--inset)); color:var(--text, #d9dee6); font:12.5px/1.5 var(--font); }
+.ai-memo:focus { outline:none; border-color:var(--accent); }
+
+/* ── 첨부한 그림 ── */
+.ai-attach { display:flex; gap:6px; flex-wrap:wrap; padding:6px 8px 0; flex:0 0 auto; }
+.ai-attach:empty { display:none; }
+.ai-thumb { position:relative; width:56px; height:56px; border-radius:7px; overflow:hidden; border:1px solid var(--border-strong);
+            background:var(--inset); flex:0 0 auto; }
+.ai-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+.ai-thumb button { position:absolute; top:2px; right:2px; width:18px; height:18px; padding:0; border:0; border-radius:50%;
+                   background:rgba(0,0,0,.6); color:#fff; font-size:12px; line-height:18px; cursor:pointer; }
+.ai-pics { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+.ai-pics img { max-width:140px; max-height:110px; border-radius:7px; border:1px solid var(--border-strong); display:block; }
+.ai-tool img.ai-shot { max-width:100%; margin:6px 4px 2px; border-radius:6px; border:1px solid var(--border); display:block; }
+.ai-pics img, .ai-tool img.ai-shot { cursor:zoom-in; }
+.ai-msg.user .ai-pics + .ai-bubble { margin-top:6px; }
+#ai.drop-target { box-shadow:inset 0 0 0 2px var(--accent); }
+.ai-clip { align-self:flex-end; width:32px; height:36px; flex:0 0 auto; }
+.ai-meta-hint.warn { color:var(--warn); }
+.ai-lightbox { position:fixed; inset:0; z-index:300; display:flex; align-items:center; justify-content:center; padding:16px;
+               background:rgba(0,0,0,.72); cursor:zoom-out; }
+.ai-lightbox img { max-width:100%; max-height:100%; border-radius:8px; box-shadow:0 8px 40px rgba(0,0,0,.5); }
+
+/* ── 캔버스 위의 상태 칸 ── */
+.ai-status { position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:20; display:none;
+             align-items:center; gap:8px; max-width:calc(100% - 20px); padding:4px 4px 4px 12px; border-radius:16px;
+             border:1px solid var(--edge); background:var(--glass), var(--surface-menu);
+             -webkit-backdrop-filter:var(--blur-menu, var(--blur)); backdrop-filter:var(--blur-menu, var(--blur));
+             box-shadow:var(--shadow-float), var(--sheen); font-size:12px; color:var(--fg); }
+.ai-status.on { display:flex; }
+.ai-status-text { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+.ai-status-stop { height:24px; border-radius:12px; flex:0 0 auto; }
+:root.solid .ai-status { -webkit-backdrop-filter:none; backdrop-filter:none; }
+
+/* 손가락: 과녁을 키우고, iOS 가 입력 칸에서 화면을 확대하지 않게 글자를 16px 로 */
+@media (pointer: coarse) {
+  .ai-icon { width:32px; height:32px; }
+  .ai-input { font-size:16px; }
+  .ai-settings input[type=text], .ai-settings input[type=password], .ai-settings input[type=number], .ai-combo input { font-size:16px; height:34px; }
+  .ai-tool > summary { padding:7px 4px; }
+}
+@media (max-width: 900px) {
+  .ai-close { display:inline-flex; }
+}
